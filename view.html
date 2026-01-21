@@ -42,13 +42,23 @@
         .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 3px; z-index: 5; }
         .plane { position: absolute; font-size: 22px; z-index: 10; margin-left: -11px; margin-top: -11px; }
 
-        @keyframes flyLoop {
-            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
-            45% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); }
-            50% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); }
-            95% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); }
-            100% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
-        }
+@keyframes flyToB {
+        0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
+        100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); }
+    }
+    @keyframes flyToA {
+        0% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); }
+        100% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); }
+    }
+
+    .plane { 
+        position: absolute; 
+        font-size: 22px; 
+        z-index: 10; 
+        margin-left: -11px; 
+        margin-top: -11px; 
+        transition: opacity 0.5s;
+    }
     </style>
 </head>
 <body>
@@ -59,78 +69,70 @@
         </div>
 
     <script>
-        const container = document.getElementById('map-container');
-        const tracker = document.getElementById('coord-tracker');
+const container = document.getElementById('map-container');
+    const SPEED = 50; // Pixels per second. Change this to make all planes faster/slower.
 
-        // 1. GENERATE RULERS (Lines every 100 pixels)
-        function createRulers() {
-            // Vertical lines (X axis)
-            for (let x = 0; x <= 1200; x += 100) {
-                const line = document.createElement('div');
-                line.className = 'ruler-x';
-                line.style.left = x + 'px';
-                container.appendChild(line);
+    function drawNetwork() {
+        const elementsToRemove = container.querySelectorAll('.city-label, .plane');
+        elementsToRemove.forEach(el => el.remove());
+
+        const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+        
+        routes.forEach(r => {
+            addLabel(r.a, r.ax, r.ay);
+            addLabel(r.b, r.bx, r.by);
+
+            // 1. Calculate Distance
+            const dx = r.bx - r.ax;
+            const dy = r.by - r.ay;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // 2. Calculate Duration (Time = Distance / Speed)
+            const duration = distance / SPEED;
+
+            // 3. Calculate Angles
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            const revAngle = angle + 180;
+
+            // 4. Create Plane
+            const plane = document.createElement('div');
+            plane.className = 'plane';
+            plane.innerHTML = '✈️';
+            
+            // Set CSS Variables
+            plane.style.setProperty('--x1', r.ax + 'px');
+            plane.style.setProperty('--y1', r.ay + 'px');
+            plane.style.setProperty('--x2', r.bx + 'px');
+            plane.style.setProperty('--y2', r.by + 'px');
+            plane.style.setProperty('--angle', (angle + 45) + 'deg');
+            plane.style.setProperty('--rev-angle', (revAngle + 45) + 'deg');
+
+            container.appendChild(plane);
+
+            // 5. Unified Speed Animation Logic
+            function startFlight() {
+                // Fly to B
+                plane.style.animation = `flyToB ${duration}s linear forwards`;
                 
-                // Add number label
-                const label = document.createElement('div');
-                label.style.cssText = `position:absolute; left:${x}px; top:-25px; font-size:10px; color:cyan;`;
-                label.innerText = x;
-                container.appendChild(label);
+                setTimeout(() => {
+                    // Stay at City B for 2 seconds (Turnaround time)
+                    setTimeout(() => {
+                        // Fly back to A
+                        plane.style.animation = `flyToA ${duration}s linear forwards`;
+                        
+                        setTimeout(() => {
+                            // Stay at City A for 2 seconds, then repeat
+                            setTimeout(startFlight, 2000);
+                        }, duration * 1000);
+                    }, 2000);
+                }, duration * 1000);
             }
-            // Horizontal lines (Y axis)
-            for (let y = 0; y <= 800; y += 100) {
-                const line = document.createElement('div');
-                line.className = 'ruler-y';
-                line.style.top = y + 'px';
-                container.appendChild(line);
 
-                const label = document.createElement('div');
-                label.style.cssText = `position:absolute; left:-35px; top:${y}px; font-size:10px; color:cyan;`;
-                label.innerText = y;
-                container.appendChild(label);
-            }
-        }
-
-        // 2. MOUSE TRACKER LOGIC
-        container.addEventListener('mousemove', (e) => {
-            const rect = container.getBoundingClientRect();
-            const x = Math.round(e.clientX - rect.left);
-            const y = Math.round(e.clientY - rect.top);
-            
-            tracker.style.display = 'block';
-            tracker.style.left = (e.clientX + 15) + 'px';
-            tracker.style.top = (e.clientY + 15) + 'px';
-            tracker.innerText = `X: ${x}, Y: ${y}`;
+            // Start each plane with a random delay so they don't launch together
+            const randomStartDelay = Math.random() * 5000; 
+            setTimeout(startFlight, randomStartDelay);
         });
-
-        container.addEventListener('mouseleave', () => tracker.style.display = 'none');
-
-        // 3. NETWORK DRAWING LOGIC (from previous step)
-        function drawNetwork() {
-            // Keep the rulers, clear everything else
-            const elementsToRemove = container.querySelectorAll('.city-label, .plane');
-            elementsToRemove.forEach(el => el.remove());
-
-            const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
-            
-            routes.forEach(r => {
-                addLabel(r.a, r.ax, r.ay);
-                addLabel(r.b, r.bx, r.by);
-
-                const angle = Math.atan2(r.by - r.ay, r.bx - r.ax) * 180 / Math.PI;
-                const plane = document.createElement('div');
-                plane.className = 'plane';
-                plane.innerHTML = '✈️';
-                plane.style.setProperty('--x1', r.ax + 'px');
-                plane.style.setProperty('--y1', r.ay + 'px');
-                plane.style.setProperty('--x2', r.bx + 'px');
-                plane.style.setProperty('--y2', r.by + 'px');
-                plane.style.setProperty('--angle', (angle + 45) + 'deg');
-                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
-                plane.style.animation = `flyLoop 10s linear infinite`;
-                container.appendChild(plane);
-            });
-        }
+    }
 
         function addLabel(text, x, y) {
             const lbl = document.createElement('div');

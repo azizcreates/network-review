@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Network Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="editor">
+
+<h1>Network Routes</h1>
+
+<textarea id="routes" placeholder="JED-RUH&#10;RUH-JED&#10;JED-DXB"></textarea>
+
+<button onclick="saveRoutes()">Save Routes</button>
+
+<script>
+function saveRoutes() {
+  const value = document.getElementById("routes").value;
+  localStorage.setItem("routes", value);
+  alert("Routes saved");
+}
+
+document.getElementById("routes").value =
+  localStorage.getItem("routes") || "";
+</script>
+
+</body>
+</html>

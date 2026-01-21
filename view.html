@@ -151,9 +151,9 @@
                         setTimeout(() => {
                             plane.style.animation = `flyToA ${duration}s linear forwards`;
                             setTimeout(() => {
-                                setTimeout(startFlight, 2000); // 2s wait at City A
+                                setTimeout(startFlight, 0); // 2s wait at City A
                             }, duration * 1000);
-                        }, 2000); // 2s wait at City B
+                        }, 0); // 2s wait at City B
                     }, duration * 1000);
                 }
 

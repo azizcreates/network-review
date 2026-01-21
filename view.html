@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Airline Network - View</title>
+    <style>
+        body { margin: 0; background: #001f3f; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        #track { width: 80%; height: 2px; background: rgba(255,255,255,0.2); position: relative; margin-top: 50px; }
+        #plane { position: absolute; top: -15px; font-size: 30px; transition: transform 0.5s; }
+        .city { position: absolute; top: 10px; font-weight: bold; }
+        
+        @keyframes fly {
+            0% { left: 0%; transform: scaleX(1); }
+            45% { transform: scaleX(1); }
+            50% { left: 100%; transform: scaleX(-1); } /* Turn around */
+            95% { transform: scaleX(-1); }
+            100% { left: 0%; transform: scaleX(1); }
+        }
+        .animating { animation: fly 6s linear infinite; }
+    </style>
+</head>
+<body>
+    <h2 id="routeTitle">Waiting for route...</h2>
+    <div id="track">
+        <div id="cityA" class="city" style="left: 0;"></div>
+        <div id="cityB" class="city" style="right: 0;"></div>
+        <div id="plane">✈️</div>
+    </div>
+
+    <script>
+        function updateView() {
+            const data = localStorage.getItem('activeRoute') || "NONE-NONE";
+            const parts = data.split('-');
+            document.getElementById('routeTitle').innerText = "Live Route: " + data;
+            document.getElementById('cityA').innerText = parts[0];
+            document.getElementById('cityB').innerText = parts[1];
+            document.getElementById('plane').classList.add('animating');
+        }
+
+        // Check for updates every second
+        setInterval(updateView, 1000);
+        updateView();
+    </script>
+</body>
+</html>

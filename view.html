@@ -12,6 +12,28 @@
             margin: 20px auto;
          
         }
+        /* The Ruler Grid */
+        .ruler-x, .ruler-y {
+            position: absolute;
+            background: rgba(0, 255, 255, 0.2);
+            pointer-events: none;
+        }
+        .ruler-x { width: 1px; height: 100%; }
+        .ruler-y { height: 1px; width: 100%; }
+
+        /* Coordinate Label following mouse */
+        #coord-tracker {
+            position: fixed;
+            background: rgba(255, 255, 0, 0.9);
+            color: black;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
         .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 3px; pointer-events: none; }
         .plane { position: absolute; font-size: 22px; z-index: 10; margin-left: -11px; margin-top: -11px; }
 

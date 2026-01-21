@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Live Network View - Fixed</title>
+    <title>Network Live Map</title>
     <style>
-        body { margin: 0; background: #522d6d; color: white; font-family: sans-serif; overflow: auto; }
-
-/* Brand Header */
-        .header {
-            background: rgba(0, 18, 32, 0.9);
-            padding: 20px 40px;
+        body { margin: 0; background: #522d6d; color: white; font-family: 'Segoe UI', sans-serif; overflow: auto; }
+        
+        /* Branding Header */
+        header {
+            background: #001220;
+            padding: 15px 40px;
             display: flex;
             align-items: center;
             border-bottom: 1px solid #1a3a5a;
@@ -16,56 +16,55 @@
             top: 0;
             z-index: 1000;
         }
-        .logo { height: 60px; margin-right: 20px; }
-        .title-group h1 { margin: 0; font-size: 28px; letter-spacing: 1px; color: #ffffff; }
-        .title-group p { margin: 5px 0 0 0; font-size: 14px; color: #8a99a8; }
-        
+        .logo { height: 50px; margin-right: 20px; }
+        .branding h1 { margin: 0; font-size: 24px; color: #fff; }
+        .branding p { margin: 0; font-size: 13px; color: #8a99a8; }
+
         #map-container { 
             width: 4000px; 
             height: 2000px; 
             background: url('map.svg') no-repeat;
             background-size: contain;
             position: relative;
-            margin: 40px; 
-            border: 1px solid #444;
+            margin: 60px 40px;
+            border: 1px solid #333;
             cursor: crosshair;
         }
 
-        /* The Ruler Grid */
-        .ruler-x, .ruler-y {
+        /* SVG Overlay for flight paths */
+        #path-svg {
             position: absolute;
-            background: rgba(0, 255, 255, 0.15);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
+            z-index: 2;
         }
+        .route-line { fill: none; stroke: rgba(255, 255, 255, 0.15); stroke-width: 1px; stroke-dasharray: 4; }
+
+        /* Ruler Lines */
+        .ruler-x, .ruler-y { position: absolute; background: rgba(0, 255, 255, 0.1); pointer-events: none; z-index: 1; }
         .ruler-x { width: 1px; height: 100%; }
         .ruler-y { height: 1px; width: 100%; }
 
-        /* Coordinate Label following mouse */
         #coord-tracker {
             position: fixed;
-            background: rgba(255, 255, 0, 0.9);
+            background: rgba(255, 255, 0, 0.95);
             color: black;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 4px;
             font-size: 14px;
             font-weight: bold;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 2000;
             display: none;
         }
 
-        .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.8); padding: 2px 4px; border-radius: 3px; z-index: 5; white-space: nowrap; }
-        
-        .plane { 
-            position: absolute; 
-            font-size: 24px; 
-            z-index: 10; 
-            margin-left: -12px; 
-            margin-top: -12px; 
-            pointer-events: none;
-        }
+        .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 3px; z-index: 10; white-space: nowrap; }
+        .plane { position: absolute; font-size: 24px; z-index: 20; margin-left: -12px; margin-top: -12px; pointer-events: none; }
 
-        /* Animation Keyframes */
+        /* Dynamic Animations */
         @keyframes flyToB {
             0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
             100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); }
@@ -78,121 +77,115 @@
 </head>
 <body>
 
+    <header>
+        <img src="Logo.svg" alt="Logo" class="logo">
+        <div class="branding">
+            <h1>Network Live Map</h1>
+            <p>Developed & Designed by Abdulaziz Salamah</p>
+        </div>
+    </header>
+
     <div id="coord-tracker">X: 0, Y: 0</div>
 
     <div id="map-container">
-        </div>
+        <svg id="path-svg"></svg>
+    </div>
 
     <script>
         const container = document.getElementById('map-container');
+        const pathSvg = document.getElementById('path-svg');
         const tracker = document.getElementById('coord-tracker');
-        const SPEED = 80; // Pixels per second (Adjusted for a 4000px map)
+        const SPEED = 80; // Unified speed (pixels per second)
 
-        // 1. GENERATE RULERS
         function createRulers() {
-            // Vertical lines every 200px (spaced out for the large map)
             for (let x = 0; x <= 4000; x += 200) {
                 const line = document.createElement('div');
-                line.className = 'ruler-x';
-                line.style.left = x + 'px';
+                line.className = 'ruler-x'; line.style.left = x + 'px';
                 container.appendChild(line);
-                
-                const label = document.createElement('div');
-                label.style.cssText = `position:absolute; left:${x}px; top:-25px; font-size:12px; color:cyan;`;
-                label.innerText = x;
-                container.appendChild(label);
+                const lbl = document.createElement('div');
+                lbl.style.cssText = `position:absolute; left:${x}px; top:-25px; font-size:12px; color:cyan;`;
+                lbl.innerText = x; container.appendChild(lbl);
             }
-            // Horizontal lines every 200px
             for (let y = 0; y <= 2000; y += 200) {
                 const line = document.createElement('div');
-                line.className = 'ruler-y';
-                line.style.top = y + 'px';
+                line.className = 'ruler-y'; line.style.top = y + 'px';
                 container.appendChild(line);
-
-                const label = document.createElement('div');
-                label.style.cssText = `position:absolute; left:-40px; top:${y}px; font-size:12px; color:cyan;`;
-                label.innerText = y;
-                container.appendChild(label);
+                const lbl = document.createElement('div');
+                lbl.style.cssText = `position:absolute; left:-40px; top:${y}px; font-size:12px; color:cyan;`;
+                lbl.innerText = y; container.appendChild(lbl);
             }
         }
 
-        // 2. MOUSE TRACKER
         container.addEventListener('mousemove', (e) => {
             const rect = container.getBoundingClientRect();
-            const x = Math.round((e.clientX - rect.left));
-            const y = Math.round((e.clientY - rect.top));
-            
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
             tracker.style.display = 'block';
             tracker.style.left = (e.clientX + 15) + 'px';
             tracker.style.top = (e.clientY + 15) + 'px';
             tracker.innerText = `X: ${x}, Y: ${y}`;
         });
-        container.addEventListener('mouseleave', () => tracker.style.display = 'none');
 
-        // 3. DRAW NETWORK
         function drawNetwork() {
-            // Only clear planes and labels, keep rulers
             const toRemove = container.querySelectorAll('.city-label, .plane');
             toRemove.forEach(el => el.remove());
+            pathSvg.innerHTML = '';
 
             const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
             
             routes.forEach(r => {
+                // Draw Path Line
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("class", "route-line");
+                line.setAttribute("x1", r.ax); line.setAttribute("y1", r.ay);
+                line.setAttribute("x2", r.bx); line.setAttribute("y2", r.by);
+                pathSvg.appendChild(line);
+
                 addLabel(r.a, r.ax, r.ay);
                 addLabel(r.b, r.bx, r.by);
 
+                // Flight Calculation
                 const dx = r.bx - r.ax;
                 const dy = r.by - r.ay;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const duration = distance / SPEED;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const duration = dist / SPEED;
                 const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
                 const plane = document.createElement('div');
                 plane.className = 'plane';
                 plane.innerHTML = '✈️';
-                
                 plane.style.setProperty('--x1', r.ax + 'px');
                 plane.style.setProperty('--y1', r.ay + 'px');
                 plane.style.setProperty('--x2', r.bx + 'px');
                 plane.style.setProperty('--y2', r.by + 'px');
                 plane.style.setProperty('--angle', (angle + 45) + 'deg');
                 plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
-
                 container.appendChild(plane);
 
-                function startFlight() {
+                function animate() {
                     plane.style.animation = `flyToB ${duration}s linear forwards`;
                     setTimeout(() => {
                         setTimeout(() => {
                             plane.style.animation = `flyToA ${duration}s linear forwards`;
-                            setTimeout(() => {
-                                setTimeout(startFlight, 0); // 2s wait at City A
-                            }, duration * 1000);
-                        }, 0); // 2s wait at City B
+                            setTimeout(() => { setTimeout(animate, 0); }, duration * 1000);
+                        }, 0); // Wait at B
                     }, duration * 1000);
                 }
-
-                setTimeout(startFlight, Math.random() * 3000);
+                setTimeout(animate, Math.random() * 3000);
             });
         }
 
-        function addLabel(text, x, y) {
-            const lbl = document.createElement('div');
-            lbl.className = 'city-label';
-            lbl.style.left = x + 'px';
-            lbl.style.top = (y + 15) + 'px';
-            lbl.innerText = text;
-            container.appendChild(lbl);
+        function addLabel(txt, x, y) {
+            const div = document.createElement('div');
+            div.className = 'city-label';
+            div.style.left = x + 'px'; div.style.top = (y + 15) + 'px';
+            div.innerText = txt;
+            container.appendChild(div);
         }
 
-        // Initialize
         createRulers();
         drawNetwork();
-        
-        // Listen for updates from the Edit page
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'airlineRoutes') drawNetwork();
-        });
+        window.addEventListener('storage', (e) => { if (e.key === 'airlineRoutes') drawNetwork(); });
     </script>
 </body>
 </html>

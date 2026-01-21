@@ -168,7 +168,7 @@
                         setTimeout(() => {
                             plane.style.animation = `flyToA ${duration}s linear forwards`;
                             setTimeout(() => { setTimeout(animate, 2000); }, duration * 1000);
-                        }, 0); // Wait at B
+                        }, 1000); // Wait at B
                     }, duration * 1000);
                 }
                 setTimeout(animate, Math.random() * 3000);

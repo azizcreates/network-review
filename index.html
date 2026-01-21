@@ -4,30 +4,37 @@
     <title>Network Manager</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 20px; padding: 20px; background: #f0f2f5; }
-        .panel { background: white; padding: 20px; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
-        .route-item { border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; }
-        input { margin-bottom: 5px; padding: 8px; width: 90%; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; }
-        .btn-add { background: #28a745; color: white; width: 100%; margin-top: 10px; }
-        .btn-del { background: #dc3545; color: white; margin-top: 5px; }
+        .panel { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
+        .route-item { border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        input { margin-bottom: 5px; padding: 8px; width: 80%; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; transition: 0.2s; }
+        .btn-add { background: #28a745; color: white; width: 100%; margin-top: 10px; font-weight: bold; }
+        .btn-del { background: #dc3545; color: white; font-size: 11px; }
+        .btn-add:hover { background: #218838; }
     </style>
 </head>
 <body>
     <div class="panel">
         <h2>Add New Route</h2>
-        <input type="text" id="cityA" placeholder="City A (e.g. JED)">
-        <input type="number" id="ax" placeholder="A - Left (px)"> <input type="number" id="ay" placeholder="A - Top (px)">
+        <input type="text" id="cityA" placeholder="City A Name (e.g. JED)">
+        <div style="display:flex; gap:5px">
+            <input type="number" id="ax" placeholder="A - X (px)"> 
+            <input type="number" id="ay" placeholder="A - Y (px)">
+        </div>
         <hr>
-        <input type="text" id="cityB" placeholder="City B (e.g. RUH)">
-        <input type="number" id="bx" placeholder="B - Left (px)"> <input type="number" id="by" placeholder="B - Top (px)">
-        <button class="btn-add" onclick="addRoute()">Add Route to Live View</button>
+        <input type="text" id="cityB" placeholder="City B Name (e.g. RUH)">
+        <div style="display:flex; gap:5px">
+            <input type="number" id="bx" placeholder="B - X (px)"> 
+            <input type="number" id="by" placeholder="B - Y (px)">
+        </div>
+        <button class="btn-add" onclick="addRoute()">Add Route</button>
     </div>
 
     <div class="panel" style="flex-grow: 1;">
         <h2>Active Routes</h2>
         <div id="routeList"></div>
         <br>
-        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open Live Map View →</a>
+        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open View Page (Refresh that page after adding)</a>
     </div>
 
     <script>
@@ -39,8 +46,7 @@
             routes.forEach((r, index) => {
                 list.innerHTML += `
                     <div class="route-item">
-                        <strong>${r.a} to ${r.b}</strong><br>
-                        Pos A: ${r.ax}px, ${r.ay}px | Pos B: ${r.bx}px, ${r.by}px
+                        <span><strong>${r.a} ✈ ${r.b}</strong> (${r.ax},${r.ay} to ${r.bx},${r.by})</span>
                         <button class="btn-del" onclick="deleteRoute(${index})">Delete</button>
                     </div>`;
             });
@@ -48,11 +54,13 @@
         }
 
         function addRoute() {
-            const newRoute = {
-                a: document.getElementById('cityA').value, ax: document.getElementById('ax').value, ay: document.getElementById('ay').value,
-                b: document.getElementById('cityB').value, bx: document.getElementById('bx').value, by: document.getElementById('by').value
+            const r = {
+                a: document.getElementById('cityA').value, ax: parseInt(document.getElementById('ax').value), ay: parseInt(document.getElementById('ay').value),
+                b: document.getElementById('cityB').value, bx: parseInt(document.getElementById('bx').value), by: parseInt(document.getElementById('by').value),
+                id: Date.now() // Unique ID for animation
             };
-            routes.push(newRoute);
+            if(!r.a || isNaN(r.ax)) return alert("Please fill all fields");
+            routes.push(r);
             renderRoutes();
         }
 
@@ -60,7 +68,6 @@
             routes.splice(index, 1);
             renderRoutes();
         }
-
         renderRoutes();
     </script>
 </body>

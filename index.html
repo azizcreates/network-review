@@ -1,30 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Airline Network - Edit</title>
+    <title>Network Manager</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 200px; }
-        button { padding: 10px 20px; cursor: pointer; background: #0052cc; color: white; border: none; border-radius: 4px; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 20px; padding: 20px; background: #f0f2f5; }
+        .panel { background: white; padding: 20px; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
+        .route-item { border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; }
+        input { margin-bottom: 5px; padding: 8px; width: 90%; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; }
+        .btn-add { background: #28a745; color: white; width: 100%; margin-top: 10px; }
+        .btn-del { background: #dc3545; color: white; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Edit Network Routes</h1>
-        <p>Enter route (e.g., JED-RUH):</p>
-        <input type="text" id="routeInput" placeholder="JED-RUH">
-        <button onclick="saveRoute()">Update Live View</button>
-        <br><br>
-        <a href="view.html" target="_blank">Open View Page →</a>
+    <div class="panel">
+        <h2>Add New Route</h2>
+        <input type="text" id="cityA" placeholder="City A (e.g. JED)">
+        <input type="number" id="ax" placeholder="A - Left (px)"> <input type="number" id="ay" placeholder="A - Top (px)">
+        <hr>
+        <input type="text" id="cityB" placeholder="City B (e.g. RUH)">
+        <input type="number" id="bx" placeholder="B - Left (px)"> <input type="number" id="by" placeholder="B - Top (px)">
+        <button class="btn-add" onclick="addRoute()">Add Route to Live View</button>
+    </div>
+
+    <div class="panel" style="flex-grow: 1;">
+        <h2>Active Routes</h2>
+        <div id="routeList"></div>
+        <br>
+        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open Live Map View →</a>
     </div>
 
     <script>
-        function saveRoute() {
-            const route = document.getElementById('routeInput').value;
-            localStorage.setItem('activeRoute', route);
-            alert('Route Updated: ' + route);
+        let routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+
+        function renderRoutes() {
+            const list = document.getElementById('routeList');
+            list.innerHTML = '';
+            routes.forEach((r, index) => {
+                list.innerHTML += `
+                    <div class="route-item">
+                        <strong>${r.a} to ${r.b}</strong><br>
+                        Pos A: ${r.ax}px, ${r.ay}px | Pos B: ${r.bx}px, ${r.by}px
+                        <button class="btn-del" onclick="deleteRoute(${index})">Delete</button>
+                    </div>`;
+            });
+            localStorage.setItem('airlineRoutes', JSON.stringify(routes));
         }
+
+        function addRoute() {
+            const newRoute = {
+                a: document.getElementById('cityA').value, ax: document.getElementById('ax').value, ay: document.getElementById('ay').value,
+                b: document.getElementById('cityB').value, bx: document.getElementById('bx').value, by: document.getElementById('by').value
+            };
+            routes.push(newRoute);
+            renderRoutes();
+        }
+
+        function deleteRoute(index) {
+            routes.splice(index, 1);
+            renderRoutes();
+        }
+
+        renderRoutes();
     </script>
 </body>
 </html>

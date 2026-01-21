@@ -1,44 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Airline Network - View</title>
+    <title>Live Network View</title>
     <style>
-        body { margin: 0; background: #001f3f; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        #track { width: 80%; height: 2px; background: rgba(255,255,255,0.2); position: relative; margin-top: 50px; }
-        #plane { position: absolute; top: -15px; font-size: 30px; transition: transform 0.5s; }
-        .city { position: absolute; top: 10px; font-weight: bold; }
-        
-        @keyframes fly {
-            0% { left: 0%; transform: scaleX(1); }
-            45% { transform: scaleX(1); }
-            50% { left: 100%; transform: scaleX(-1); } /* Turn around */
-            95% { transform: scaleX(-1); }
-            100% { left: 0%; transform: scaleX(1); }
+        body { margin: 0; background: #001220; overflow: hidden; }
+        #map-container { 
+            width: 1200px; height: 800px; 
+            background: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg') no-repeat;
+            background-size: contain;
+            position: relative;
+            margin: auto;
+            border: 1px solid #333;
         }
-        .animating { animation: fly 6s linear infinite; }
+        .city-label { position: absolute; color: white; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        .plane { position: absolute; font-size: 20px; z-index: 10; transition: all 5s linear; }
     </style>
 </head>
 <body>
-    <h2 id="routeTitle">Waiting for route...</h2>
-    <div id="track">
-        <div id="cityA" class="city" style="left: 0;"></div>
-        <div id="cityB" class="city" style="right: 0;"></div>
-        <div id="plane">✈️</div>
-    </div>
+    <div id="map-container" id="map"></div>
 
     <script>
-        function updateView() {
-            const data = localStorage.getItem('activeRoute') || "NONE-NONE";
-            const parts = data.split('-');
-            document.getElementById('routeTitle').innerText = "Live Route: " + data;
-            document.getElementById('cityA').innerText = parts[0];
-            document.getElementById('cityB').innerText = parts[1];
-            document.getElementById('plane').classList.add('animating');
+        const container = document.getElementById('map-container');
+
+        function drawNetwork() {
+            container.innerHTML = '';
+            const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+            
+            routes.forEach((r, i) => {
+                // Add City Labels
+                createLabel(r.a, r.ax, r.ay);
+                createLabel(r.b, r.bx, r.by);
+                
+                // Add Plane
+                const plane = document.createElement('div');
+                plane.className = 'plane';
+                plane.innerHTML = '✈️';
+                plane.style.left = r.ax + 'px';
+                plane.style.top = r.ay + 'px';
+                container.appendChild(plane);
+
+                // Flight Loop Logic
+                let toB = true;
+                setInterval(() => {
+                    if(toB) {
+                        plane.style.left = r.bx + 'px';
+                        plane.style.top = r.by + 'px';
+                        plane.style.transform = 'rotate(45deg)'; 
+                    } else {
+                        plane.style.left = r.ax + 'px';
+                        plane.style.top = r.ay + 'px';
+                        plane.style.transform = 'rotate(225deg)';
+                    }
+                    toB = !toB;
+                }, 6000);
+            });
         }
 
-        // Check for updates every second
-        setInterval(updateView, 1000);
-        updateView();
+        function createLabel(text, x, y) {
+            const div = document.createElement('div');
+            div.className = 'city-label';
+            div.style.left = x + 'px';
+            div.style.top = (y - 15) + 'px';
+            div.innerText = text;
+            container.appendChild(div);
+        }
+
+        drawNetwork();
+        // Refresh every 5 seconds to catch new routes added in the other tab
+        setInterval(drawNetwork, 5000);
     </script>
 </body>
 </html>

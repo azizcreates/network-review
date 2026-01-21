@@ -3,7 +3,22 @@
 <head>
     <title>Live Network View - Fixed</title>
     <style>
-        body { margin: 0; background: #001220; color: white; font-family: sans-serif; overflow: auto; }
+        body { margin: 0; background: #522d6d; color: white; font-family: sans-serif; overflow: auto; }
+
+/* Brand Header */
+        .header {
+            background: rgba(0, 18, 32, 0.9);
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #1a3a5a;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .logo { height: 60px; margin-right: 20px; }
+        .title-group h1 { margin: 0; font-size: 28px; letter-spacing: 1px; color: #ffffff; }
+        .title-group p { margin: 5px 0 0 0; font-size: 14px; color: #8a99a8; }
         
         #map-container { 
             width: 4000px; 

@@ -1,17 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Network View</title>
-  <link rel="stylesheet" href="styles.css" />
+    <title>Airline Network - Edit</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { padding: 10px; width: 200px; }
+        button { padding: 10px 20px; cursor: pointer; background: #0052cc; color: white; border: none; border-radius: 4px; }
+    </style>
 </head>
-<body class="viewer">
+<body>
+    <div class="container">
+        <h1>Edit Network Routes</h1>
+        <p>Enter route (e.g., JED-RUH):</p>
+        <input type="text" id="routeInput" placeholder="JED-RUH">
+        <button onclick="saveRoute()">Update Live View</button>
+        <br><br>
+        <a href="view.html" target="_blank">Open View Page →</a>
+    </div>
 
-<div id="map-container">
-  <object data="map.svg" type="image/svg+xml" id="map"></object>
-  <img src="plane.svg" id="plane" />
-</div>
-
-<script src="script.js"></script>
+    <script>
+        function saveRoute() {
+            const route = document.getElementById('routeInput').value;
+            localStorage.setItem('activeRoute', route);
+            alert('Route Updated: ' + route);
+        }
+    </script>
 </body>
 </html>

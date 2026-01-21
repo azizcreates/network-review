@@ -78,7 +78,7 @@
 <body>
 
     <header>
-        <img srs= "logo.svg" alt="Logo" class="logo">
+        <img src= "logo.svg" alt="Logo" class="logo">
         <div class="branding">
             <h1>Network Live Map</h1>
             <p>Developed & Designed by Abdulaziz Salamah</p>
@@ -167,7 +167,7 @@
                     setTimeout(() => {
                         setTimeout(() => {
                             plane.style.animation = `flyToA ${duration}s linear forwards`;
-                            setTimeout(() => { setTimeout(animate, 0); }, duration * 1000);
+                            setTimeout(() => { setTimeout(animate, 2000); }, duration * 1000);
                         }, 0); // Wait at B
                     }, duration * 1000);
                 }

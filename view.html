@@ -3,71 +3,76 @@
 <head>
     <title>Live Network View</title>
     <style>
-        body { margin: 0; background: #001220; overflow: hidden; }
+        body { margin: 0; background: #001220; color: white; font-family: sans-serif; }
         #map-container { 
             width: 1200px; height: 800px; 
             background: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg') no-repeat;
             background-size: contain;
             position: relative;
-            margin: auto;
-            border: 1px solid #333;
+            margin: 20px auto;
+            border: 2px solid #1a3a5a;
         }
-        .city-label { position: absolute; color: white; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
-        .plane { position: absolute; font-size: 20px; z-index: 10; transition: all 5s linear; }
+        .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 3px; pointer-events: none; }
+        .plane { position: absolute; font-size: 22px; z-index: 10; margin-left: -11px; margin-top: -11px; }
+
+        @keyframes flyLoop {
+            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
+            45% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); }
+            50% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); }
+            95% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); }
+            100% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
+        }
     </style>
 </head>
 <body>
-    <div id="map-container" id="map"></div>
+    <div id="map-container"></div>
 
     <script>
-        const container = document.getElementById('map-container');
-
-        function drawNetwork() {
-            container.innerHTML = '';
+        function init() {
+            const container = document.getElementById('map-container');
             const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
-            
-            routes.forEach((r, i) => {
-                // Add City Labels
-                createLabel(r.a, r.ax, r.ay);
-                createLabel(r.b, r.bx, r.by);
+            container.innerHTML = '';
+
+            routes.forEach(r => {
+                // Create Labels
+                addLabel(r.a, r.ax, r.ay);
+                addLabel(r.b, r.bx, r.by);
+
+                // Calculate Angle for the plane to face the right way
+                const angle = Math.atan2(r.by - r.ay, r.bx - r.ax) * 180 / Math.PI;
                 
-                // Add Plane
+                // Create Plane
                 const plane = document.createElement('div');
                 plane.className = 'plane';
                 plane.innerHTML = '✈️';
-                plane.style.left = r.ax + 'px';
-                plane.style.top = r.ay + 'px';
+                
+                // Set CSS variables for the animation
+                plane.style.setProperty('--x1', r.ax + 'px');
+                plane.style.setProperty('--y1', r.ay + 'px');
+                plane.style.setProperty('--x2', r.bx + 'px');
+                plane.style.setProperty('--y2', r.by + 'px');
+                plane.style.setProperty('--angle', (angle + 45) + 'deg');
+                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
+                
+                plane.style.animation = `flyLoop 10s linear infinite`;
                 container.appendChild(plane);
-
-                // Flight Loop Logic
-                let toB = true;
-                setInterval(() => {
-                    if(toB) {
-                        plane.style.left = r.bx + 'px';
-                        plane.style.top = r.by + 'px';
-                        plane.style.transform = 'rotate(45deg)'; 
-                    } else {
-                        plane.style.left = r.ax + 'px';
-                        plane.style.top = r.ay + 'px';
-                        plane.style.transform = 'rotate(225deg)';
-                    }
-                    toB = !toB;
-                }, 6000);
             });
         }
 
-        function createLabel(text, x, y) {
-            const div = document.createElement('div');
-            div.className = 'city-label';
-            div.style.left = x + 'px';
-            div.style.top = (y - 15) + 'px';
-            div.innerText = text;
-            container.appendChild(div);
+        function addLabel(text, x, y) {
+            const lbl = document.createElement('div');
+            lbl.className = 'city-label';
+            lbl.style.left = x + 'px';
+            lbl.style.top = (y + 10) + 'px';
+            lbl.innerText = text;
+            document.getElementById('map-container').appendChild(lbl);
         }
 
-        drawNetwork();
-        // Refresh every 5 seconds to catch new routes added in the other tab
-        setInterval(drawNetwork, 5000);
+        // Run once on load
+        init();
+        
+        // Listen for storage changes (happens when you save in the other tab)
+        window.addEventListener('storage', init);
     </script>
 </body>
 </html>

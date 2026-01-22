@@ -47,3 +47,16 @@ body {
             /* ANIMATE position (6s), but NOT transform (rotation) */
             transition: left 6s linear, top 6s linear; 
         }
+
+#coord-tracker { 
+    position: fixed; 
+    background: rgba(255, 255, 0, 0.95); 
+    color: black; 
+    padding: 5px 12px; 
+    border-radius: 4px; 
+    font-size: 14px; 
+    font-weight: bold; 
+    pointer-events: none; 
+    z-index: 2000; 
+    display: none; 
+}

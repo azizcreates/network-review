@@ -9,8 +9,10 @@
         input { margin-bottom: 5px; padding: 8px; width: 80%; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; transition: 0.2s; }
         .btn-add { background: #28a745; color: white; width: 100%; margin-top: 10px; font-weight: bold; }
+        .btn-refresh { background: #007bff; color: white; width: 100%; margin-bottom: 10px; font-weight: bold; }
         .btn-del { background: #dc3545; color: white; font-size: 11px; }
         .btn-add:hover { background: #218838; }
+        .btn-add:disabled { background: #ccc; }
     </style>
 </head>
 <body>
@@ -27,81 +29,83 @@
             <input type="number" id="bx" placeholder="B - X (px)"> 
             <input type="number" id="by" placeholder="B - Y (px)">
         </div>
-        <button class="btn-add" onclick="addRoute()">Add Route</button>
+        <button class="btn-add" id="addBtn" onclick="addRoute()">Add Route</button>
     </div>
 
     <div class="panel" style="flex-grow: 1;">
-        <h2>Active Routes</h2>
-        <div id="routeList"></div>
+        <h2>Active Routes (Cloud)</h2>
+        <button class="btn-refresh" onclick="fetchCloudRoutes()">Refresh List from Cloud</button>
+        <div id="routeList">Click Refresh to see active routes...</div>
         <br>
-        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open View Page (Refresh that page after adding)</a>
+        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open View Page →</a>
     </div>
 
     <script>
-        let routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbxO6arOMafeKrrDuRiEwc4p2bDkqI6L9e3yfSEuPDbZ2649YGmpf2YnY7ybJPMiTCM3/exec";
 
-        function renderRoutes() {
+        async function fetchCloudRoutes() {
             const list = document.getElementById('routeList');
-            list.innerHTML = '';
-            routes.forEach((r, index) => {
-                list.innerHTML += `
-                    <div class="route-item">
-                        <span><strong>${r.a} ✈ ${r.b}</strong> (${r.ax},${r.ay} to ${r.bx},${r.by})</span>
-                        <button class="btn-del" onclick="deleteRoute(${index})">Delete</button>
-                    </div>`;
-            });
-            localStorage.setItem('airlineRoutes', JSON.stringify(routes));
+            list.innerHTML = 'Loading...';
+            try {
+                const response = await fetch(SHEET_URL);
+                const routes = await response.json();
+                list.innerHTML = '';
+                routes.forEach((r) => {
+                    list.innerHTML += `
+                        <div class="route-item">
+                            <span><strong>${r.a} ✈ ${r.b}</strong> (${r.ax},${r.ay} to ${r.bx},${r.by})</span>
+                        </div>`;
+                });
+            } catch (error) {
+                list.innerHTML = 'Error loading routes. Check console.';
+                console.error(error);
+            }
         }
 
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbxO6arOMafeKrrDuRiEwc4p2bDkqI6L9e3yfSEuPDbZ2649YGmpf2YnY7ybJPMiTCM3/exec"; 
-
-async function addRoute() {
-    const r = {
-        a: document.getElementById('cityA').value, 
-        ax: document.getElementById('ax').value, 
-        ay: document.getElementById('ay').value,
-        b: document.getElementById('cityB').value, 
-        bx: document.getElementById('bx').value, 
-        by: document.getElementById('by').value
-    };
-
-    if (!r.a || !r.ax || !r.bx) {
-        alert("Please fill in all city names and coordinates.");
-        return;
-    }
-
-    try {
-        await fetch(SHEET_URL, {
-            method: 'POST',
-            mode: 'no-cors', // This is important for Google Script deployments
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(r)
-        });
-
-        alert("Saved to Cloud successfully!");
-        
-        // Optional: Clear the inputs after saving
-        document.getElementById('cityA').value = '';
-        document.getElementById('cityB').value = '';
-        
-    } catch (error) {
-        console.error("Error saving to cloud:", error);
-        alert("Failed to save. Check your console for errors.");
-    }
-}
+        async function addRoute() {
+            const btn = document.getElementById('addBtn');
+            const r = {
+                a: document.getElementById('cityA').value, 
+                ax: parseInt(document.getElementById('ax').value), 
+                ay: parseInt(document.getElementById('ay').value),
+                b: document.getElementById('cityB').value, 
+                bx: parseInt(document.getElementById('bx').value), 
+                by: parseInt(document.getElementById('by').value)
             };
-            if(!r.a || isNaN(r.ax)) return alert("Please fill all fields");
-            routes.push(r);
-            renderRoutes();
+
+            if (!r.a || isNaN(r.ax) || isNaN(r.bx)) {
+                alert("Please fill in all city names and numeric coordinates.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(r)
+                });
+
+                alert("Saved to Cloud successfully!");
+                document.getElementById('cityA').value = '';
+                document.getElementById('cityB').value = '';
+                fetchCloudRoutes(); // Refresh the list
+                
+            } catch (error) {
+                console.error("Error saving:", error);
+                alert("Failed to save.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Add Route";
+            }
         }
 
-        function deleteRoute(index) {
-            routes.splice(index, 1);
-            renderRoutes();
-        }
-        renderRoutes();
+        // Initial fetch
+        fetchCloudRoutes();
     </script>
 </body>
 </html>

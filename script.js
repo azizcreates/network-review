@@ -28,21 +28,39 @@ function animateRoute() {
     return;
   }
 
+  // --- STEP 1: SNAP TO START (At City A) ---
+  plane.style.transition = "none"; // Disable animation for instant teleport
   plane.style.left = A.x + "px";
   plane.style.top = A.y + "px";
-  plane.style.transform = "rotate(0deg)";
 
+  // Calculate angle and apply 0-degree offset for the '✈' icon
+  const angle = Math.atan2(B.y - A.y, B.x - A.x) * (180 / Math.PI);
+  // Note: If icon is sideways, change (angle + 0) to (angle + 90)
+  plane.style.transform = `rotate(${angle + 0}deg)`;
+
+  // --- STEP 2: WAIT 2 SECONDS AT GATE ---
   setTimeout(() => {
-    const angle = Math.atan2(B.y - A.y, B.x - A.x) * 180 / Math.PI;
-    plane.style.transform = `rotate(${angle}deg)`;
+    
+    // --- STEP 3: FLY TO B (6 seconds) ---
+    // Only animate position, not rotation
+    plane.style.transition = "left 6s linear, top 6s linear"; 
     plane.style.left = B.x + "px";
     plane.style.top = B.y + "px";
-  }, 500);
 
-  setTimeout(() => {
-    index = (index + 1) % routes.length;
-    animateRoute();
-  }, 4000);
+    // --- STEP 4: ARRIVAL AT B ---
+    setTimeout(() => {
+      // Rotate 180 degrees to prepare for next leg or stay at gate
+      plane.style.transition = "none"; 
+      plane.style.transform = `rotate(${angle + 180}deg)`;
+
+      // --- STEP 5: PAUSE 2 SECONDS THEN NEXT ROUTE ---
+      setTimeout(() => {
+        index = (index + 1) % routes.length;
+        animateRoute();
+      }, 2000);
+
+    }, 6000); // Wait for 6s flight to finish
+  }, 2000); // Wait for 2s boarding to finish
 }
 
 animateRoute();

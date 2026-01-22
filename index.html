@@ -6,106 +6,91 @@
         body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 20px; padding: 20px; background: #f0f2f5; }
         .panel { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
         .route-item { border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-        input { margin-bottom: 5px; padding: 8px; width: 80%; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; transition: 0.2s; }
-        .btn-add { background: #28a745; color: white; width: 100%; margin-top: 10px; font-weight: bold; }
-        .btn-refresh { background: #007bff; color: white; width: 100%; margin-bottom: 10px; font-weight: bold; }
-        .btn-del { background: #dc3545; color: white; font-size: 11px; }
+        input { margin-bottom: 10px; padding: 8px; width: calc(100% - 20px); border: 1px solid #ddd; border-radius: 4px; }
+        .coord-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        .coord-group input { width: 45%; }
+        button { padding: 10px; cursor: pointer; border-radius: 4px; border: none; transition: 0.2s; font-weight: bold; }
+        .btn-add { background: #28a745; color: white; width: 100%; }
+        .btn-del { background: #dc3545; color: white; font-size: 11px; padding: 5px 8px; }
         .btn-add:hover { background: #218838; }
-        .btn-add:disabled { background: #ccc; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
     </style>
 </head>
 <body>
     <div class="panel">
         <h2>Add New Route</h2>
-        <input type="text" id="cityA" placeholder="City A Name (e.g. JED)">
-        <div style="display:flex; gap:5px">
-            <input type="number" id="ax" placeholder="A - X (px)"> 
-            <input type="number" id="ay" placeholder="A - Y (px)">
+        <label>City A</label>
+        <input type="text" id="cityA" placeholder="Name (e.g. JED)">
+        <div class="coord-group">
+            <input type="number" id="ax" placeholder="X Coord"> 
+            <input type="number" id="ay" placeholder="Y Coord">
         </div>
         <hr>
-        <input type="text" id="cityB" placeholder="City B Name (e.g. RUH)">
-        <div style="display:flex; gap:5px">
-            <input type="number" id="bx" placeholder="B - X (px)"> 
-            <input type="number" id="by" placeholder="B - Y (px)">
+        <label>City B</label>
+        <input type="text" id="cityB" placeholder="Name (e.g. RUH)">
+        <div class="coord-group">
+            <input type="number" id="bx" placeholder="X Coord"> 
+            <input type="number" id="by" placeholder="Y Coord">
         </div>
-        <button class="btn-add" id="addBtn" onclick="addRoute()">Add Route</button>
+        <button class="btn-add" onclick="addRoute()">Add Route</button>
     </div>
 
     <div class="panel" style="flex-grow: 1;">
-        <h2>Active Routes (Cloud)</h2>
-        <button class="btn-refresh" onclick="fetchCloudRoutes()">Refresh List from Cloud</button>
-        <div id="routeList">Click Refresh to see active routes...</div>
+        <h2>Active Routes</h2>
+        <div id="routeList"></div>
         <br>
-        <a href="view.html" target="_blank" style="font-weight:bold; color: #0052cc;">Open View Page →</a>
+        <a href="view.html" target="_blank" style="color: #0052cc; font-weight: bold; text-decoration: none;">View Live Map →</a>
     </div>
 
     <script>
-        const SHEET_URL = "https://script.google.com/macros/s/AKfycbxO6arOMafeKrrDuRiEwc4p2bDkqI6L9e3yfSEuPDbZ2649YGmpf2YnY7ybJPMiTCM3/exec";
+        let routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
 
-        async function fetchCloudRoutes() {
+        function renderRoutes() {
             const list = document.getElementById('routeList');
-            list.innerHTML = 'Loading...';
-            try {
-                const response = await fetch(SHEET_URL);
-                const routes = await response.json();
-                list.innerHTML = '';
-                routes.forEach((r) => {
-                    list.innerHTML += `
-                        <div class="route-item">
-                            <span><strong>${r.a} ✈ ${r.b}</strong> (${r.ax},${r.ay} to ${r.bx},${r.by})</span>
-                        </div>`;
-                });
-            } catch (error) {
-                list.innerHTML = 'Error loading routes. Check console.';
-                console.error(error);
-            }
+            list.innerHTML = routes.length === 0 ? '<p style="color:gray">No routes added yet.</p>' : '';
+            routes.forEach((r, index) => {
+                list.innerHTML += `
+                    <div class="route-item">
+                        <span><strong>${r.a} ✈ ${r.b}</strong><br><small>${r.ax},${r.ay} → ${r.bx},${r.by}</small></span>
+                        <button class="btn-del" onclick="deleteRoute(${index})">Delete</button>
+                    </div>`;
+            });
+            localStorage.setItem('airlineRoutes', JSON.stringify(routes));
         }
 
-        async function addRoute() {
-            const btn = document.getElementById('addBtn');
+        function addRoute() {
             const r = {
-                a: document.getElementById('cityA').value, 
-                ax: parseInt(document.getElementById('ax').value), 
+                a: document.getElementById('cityA').value,
+                ax: parseInt(document.getElementById('ax').value),
                 ay: parseInt(document.getElementById('ay').value),
-                b: document.getElementById('cityB').value, 
-                bx: parseInt(document.getElementById('bx').value), 
+                b: document.getElementById('cityB').value,
+                bx: parseInt(document.getElementById('bx').value),
                 by: parseInt(document.getElementById('by').value)
             };
 
-            if (!r.a || isNaN(r.ax) || isNaN(r.bx)) {
-                alert("Please fill in all city names and numeric coordinates.");
+            if (!r.a || isNaN(r.ax) || !r.b || isNaN(r.bx)) {
+                alert("Please fill in all fields with valid names and numbers.");
                 return;
             }
 
-            btn.disabled = true;
-            btn.innerText = "Saving...";
-
-            try {
-                await fetch(SHEET_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(r)
-                });
-
-                alert("Saved to Cloud successfully!");
-                document.getElementById('cityA').value = '';
-                document.getElementById('cityB').value = '';
-                fetchCloudRoutes(); // Refresh the list
-                
-            } catch (error) {
-                console.error("Error saving:", error);
-                alert("Failed to save.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Add Route";
-            }
+            routes.push(r);
+            renderRoutes();
+            
+            // Clear inputs
+            document.getElementById('cityA').value = '';
+            document.getElementById('ax').value = '';
+            document.getElementById('ay').value = '';
+            document.getElementById('cityB').value = '';
+            document.getElementById('bx').value = '';
+            document.getElementById('by').value = '';
         }
 
-        // Initial fetch
-        fetchCloudRoutes();
+        function deleteRoute(index) {
+            routes.splice(index, 1);
+            renderRoutes();
+        }
+
+        renderRoutes();
     </script>
 </body>
 </html>

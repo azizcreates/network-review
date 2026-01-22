@@ -40,13 +40,10 @@
             position: absolute; font-size: 24px; z-index: 20; 
             margin-left: -12px; margin-top: -12px; pointer-events: none; 
             text-shadow: 0 0 10px #CDDE00;
-            /* CRITICAL: This enables the smooth sliding animation */
-            transition: all 6s linear; 
+            /* UPDATED: Only move smoothly. Rotation will happen instantly. */
+            transition: left 6s linear, top 6s linear; 
         }
 
-        .ruler-x, .ruler-y { position: absolute; background: rgba(0, 255, 255, 0.1); pointer-events: none; z-index: 1; }
-        .ruler-x { width: 1px; height: 100%; }
-        .ruler-y { height: 1px; width: 100%; }
         #coord-tracker { position: fixed; background: rgba(255, 255, 0, 0.95); color: black; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 2000; display: none; }
     </style>
 </head>
@@ -68,19 +65,6 @@
         const pathSvg = document.getElementById('path-svg');
         const tracker = document.getElementById('coord-tracker');
 
-        function createRulers() {
-            for (let x = 0; x <= 3600; x += 200) {
-                const line = document.createElement('div');
-                line.className = 'ruler-x'; line.style.left = x + 'px';
-                container.appendChild(line);
-            }
-            for (let y = 0; y <= 2000; y += 200) {
-                const line = document.createElement('div');
-                line.className = 'ruler-y'; line.style.top = y + 'px';
-                container.appendChild(line);
-            }
-        }
-
         container.addEventListener('mousemove', (e) => {
             const rect = container.getBoundingClientRect();
             tracker.style.display = 'block';
@@ -98,14 +82,12 @@
                 pathSvg.innerHTML = '';
 
                 routes.forEach(r => {
-                    // Draw Line
+                    // Lines & Dots
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                     line.setAttribute("class", "route-line");
                     line.setAttribute("x1", r.ax); line.setAttribute("y1", r.ay);
                     line.setAttribute("x2", r.bx); line.setAttribute("y2", r.by);
                     pathSvg.appendChild(line);
-
-                    // Draw Dots
                     addCity(r.a, r.ax, r.ay);
                     addCity(r.b, r.bx, r.by);
 
@@ -115,25 +97,31 @@
                     plane.innerHTML = '✈️';
                     plane.style.left = r.ax + 'px';
                     plane.style.top = r.ay + 'px';
+                    // Start face-forward
+                    plane.style.transform = 'rotate(45deg)'; 
                     container.appendChild(plane);
 
                     let toB = true;
                     function move() {
                         if(toB) {
+                            // Fly to B
                             plane.style.left = r.bx + 'px';
                             plane.style.top = r.by + 'px';
-                            plane.style.transform = 'rotate(45deg)'; 
+                            // Wait for the 6s flight to end, then flip to 225deg
+                            setTimeout(() => { plane.style.transform = 'rotate(225deg)'; }, 6000);
                         } else {
+                            // Fly to A
                             plane.style.left = r.ax + 'px';
                             plane.style.top = r.ay + 'px';
-                            plane.style.transform = 'rotate(225deg)';
+                            // Wait for the 6s flight to end, then flip to 45deg
+                            setTimeout(() => { plane.style.transform = 'rotate(45deg)'; }, 6000);
                         }
                         toB = !toB;
                     }
 
                     setTimeout(() => {
                         move();
-                        setInterval(move, 7000); // 6s flight + 1s rest
+                        setInterval(move, 7000); // 6s flight + 1s rest/rotation
                     }, 100);
                 });
             } catch (error) { console.error("Cloud Error:", error); }
@@ -146,14 +134,12 @@
             dot.className = 'city-dot'; dot.id = id;
             dot.style.left = x + 'px'; dot.style.top = y + 'px';
             container.appendChild(dot);
-
             const div = document.createElement('div');
             div.className = 'city-label'; div.style.left = x + 'px'; 
             div.style.top = (y + 12) + 'px'; div.innerText = name; 
             container.appendChild(div);
         }
 
-        createRulers();
         drawNetwork();
         setInterval(drawNetwork, 60000); 
     </script>

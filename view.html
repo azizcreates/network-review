@@ -3,7 +3,7 @@
 <head>
     <title>Network Live Map</title>
     <style>
-        body { margin: 0; background: #281536; color: white; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; background: #281536; color: white; font-family: 'Segoe UI', sans-serif; overflow: auto; }
         
         header { 
             background: #522d6d; padding: 15px 40px; display: flex; align-items: center; 
@@ -23,18 +23,20 @@
         .city-dot {
             position: absolute; width: 8px; height: 8px; background: #CDDE00;
             border-radius: 50%; z-index: 15; transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #CDDE00;
         }
 
         .city-label { 
             position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.7); 
             padding: 2px 4px; border-radius: 3px; z-index: 10; transform: translateX(-50%);
+            white-space: nowrap;
         }
         
         .plane { 
             position: absolute; font-size: 24px; z-index: 20; 
             margin-left: -12px; margin-top: -12px; pointer-events: none; 
             text-shadow: 0 0 10px #CDDE00;
-            /* ONLY animate position. Do NOT animate transform/rotation. */
+            /* ANIMATE position (6s), but NOT transform (rotation) */
             transition: left 6s linear, top 6s linear; 
             will-change: left, top;
         }
@@ -52,80 +54,88 @@
         const container = document.getElementById('map-container');
         const pathSvg = document.getElementById('path-svg');
 
-async function drawNetwork() {
+        async function drawNetwork() {
             try {
                 const response = await fetch(SHEET_URL);
                 const routes = await response.json();
                 
+                // Clear map for fresh data
                 container.querySelectorAll('.city-label, .plane, .city-dot').forEach(el => el.remove());
                 pathSvg.innerHTML = '';
 
                 routes.forEach(r => {
-                    // 1. Draw Lines and Cities
+                    // 1. Draw Visual Route (The dashed line)
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                     line.setAttribute("class", "route-line");
                     line.setAttribute("x1", r.ax); line.setAttribute("y1", r.ay);
                     line.setAttribute("x2", r.bx); line.setAttribute("y2", r.by);
                     pathSvg.appendChild(line);
+
+                    // 2. Add City Dots and Labels
                     addCity(r.a, r.ax, r.ay);
                     addCity(r.b, r.bx, r.by);
 
-                    // 2. Create Plane
+                    // 3. Create Plane
                     const plane = document.createElement('div');
                     plane.className = 'plane';
                     plane.innerHTML = '✈️';
-                    // Start at City A facing B
                     plane.style.left = r.ax + 'px';
                     plane.style.top = r.ay + 'px';
                     plane.style.transform = 'rotate(45deg)'; 
                     container.appendChild(plane);
 
-                    // 3. The Chained Animation Logic
-                    function startCycle() {
-                        // PHASE 1: Fly to B (6 seconds)
+                    // 4. Sequence Logic
+                    function startSequence() {
+                        // TAKEOFF -> FLY TO B
                         plane.style.left = r.bx + 'px';
                         plane.style.top = r.by + 'px';
 
-                        // After 6 seconds (Arrival at B)
                         setTimeout(() => {
-                            // PHASE 2: Rotate at B and wait (2 seconds)
+                            // ARRIVE AT B -> SNAP ROTATE
                             plane.style.transform = 'rotate(225deg)';
 
-                            // After 2 seconds of waiting
                             setTimeout(() => {
-                                // PHASE 3: Fly back to A (6 seconds)
+                                // BOARDING FINISHED -> FLY TO A
                                 plane.style.left = r.ax + 'px';
                                 plane.style.top = r.ay + 'px';
 
-                                // After 6 seconds (Arrival at A)
                                 setTimeout(() => {
-                                    // PHASE 4: Rotate at A and wait (2 seconds)
+                                    // ARRIVE AT A -> SNAP ROTATE
                                     plane.style.transform = 'rotate(45deg)';
-
-                                    // After 2 seconds, restart the whole cycle
-                                    setTimeout(startCycle, 2000);
-
-                                }, 6000);
-                            }, 2000);
-                        }, 6000);
+                                    
+                                    // FINAL WAIT -> RESTART
+                                    setTimeout(startSequence, 2000);
+                                }, 6000); 
+                            }, 2000); 
+                        }, 6000); 
                     }
 
-                    // Start the loop with a random delay so they aren't all in sync
-                    setTimeout(startCycle, Math.random() * 2000);
+                    // Start after brief delay
+                    setTimeout(startSequence, 100);
                 });
             } catch (error) { console.error("Cloud Error:", error); }
         }
 
         function addCity(name, x, y) {
+            const id = `dot-${x}-${y}`;
+            if (document.getElementById(id)) return; // Don't draw same city twice
+
             const dot = document.createElement('div');
-            dot.className = 'city-dot'; dot.style.left = x + 'px'; dot.style.top = y + 'px';
+            dot.className = 'city-dot'; 
+            dot.id = id;
+            dot.style.left = x + 'px'; dot.style.top = y + 'px';
             container.appendChild(dot);
+
             const div = document.createElement('div');
-            div.className = 'city-label'; div.style.left = x + 'px'; div.style.top = (y + 12) + 'px'; div.innerText = name; 
+            div.className = 'city-label'; 
+            div.style.left = x + 'px'; div.style.top = (y + 12) + 'px'; 
+            div.innerText = name; 
             container.appendChild(div);
         }
 
         drawNetwork();
+        // Refresh from cloud every 2 minutes
+        setInterval(drawNetwork, 120000); 
     </script>
 </body>
 </html>

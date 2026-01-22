@@ -5,7 +5,6 @@
     <style>
         body { margin: 0; background: #281536; color: white; font-family: 'Segoe UI', sans-serif; overflow: auto; }
         
-        /* HEADER FIX: Fixed to top and window width */
         header { 
             background: #522d6d; 
             padding: 15px 40px; 
@@ -30,13 +29,13 @@
             background: url('map.svg') no-repeat; 
             background-size: contain; 
             position: relative; 
-            margin: 120px 40px 60px 40px; /* Top margin adjusted for fixed header */
+            margin: 120px 40px 60px 40px; 
             border: 1px solid #333; 
             cursor: crosshair; 
         }
 
         #path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-        .route-line { fill: none; stroke: rgb(246, 240, 252); stroke-width: 1.5px; stroke-dasharray: 4; }
+        .route-line { fill: none; stroke: rgb(246, 240, 252); stroke-width: 2px; stroke-dasharray: 4; }
         
         .ruler-x, .ruler-y { position: absolute; background: rgba(0, 255, 255, 0.1); pointer-events: none; z-index: 1; }
         .ruler-x { width: 1px; height: 100%; }
@@ -44,9 +43,16 @@
         
         #coord-tracker { position: fixed; background: rgba(255, 255, 0, 0.95); color: black; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 2000; display: none; }
         .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 3px; z-index: 10; white-space: nowrap; }
-        .plane { position: absolute; font-size: 24px; z-index: 20; margin-left: -12px; margin-top: -12px; pointer-events: none; transition: none; }
+        
+        .plane { 
+            position: absolute; 
+            font-size: 24px; 
+            z-index: 20; 
+            margin-left: -12px; 
+            margin-top: -12px; 
+            pointer-events: none; 
+        }
 
-        /* Keyframes using the CSS variables */
         @keyframes flyToB { 
             0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); } 
             100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); } 
@@ -112,39 +118,43 @@
                 addLabel(r.b, r.bx, r.by);
 
                 const dx = r.bx - r.ax, dy = r.by - r.ay;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                const duration = dist / SPEED;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                const duration = distance / SPEED;
+                
+                // Logic from your old code
                 const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                const revAngle = angle + 180;
 
                 const plane = document.createElement('div');
                 plane.className = 'plane'; 
                 plane.innerHTML = '✈️';
                 
-                // Set initial flight variables
                 plane.style.setProperty('--x1', r.ax + 'px');
                 plane.style.setProperty('--y1', r.ay + 'px');
                 plane.style.setProperty('--x2', r.bx + 'px');
                 plane.style.setProperty('--y2', r.by + 'px');
+                
+                // Applying the specific rotation formula (+45 offset)
                 plane.style.setProperty('--angle', (angle + 45) + 'deg');
-                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
+                plane.style.setProperty('--rev-angle', (revAngle + 45) + 'deg');
                 container.appendChild(plane);
 
-                function animate() {
-                    // Fly to B (Facing Forward)
+                function startFlight() {
+                    // Fly to B
                     plane.style.animation = `flyToB ${duration}s linear forwards`;
                     
                     setTimeout(() => {
-                        // Fly to A (Facing Reverse)
+                        // Fly to A (No pause)
                         plane.style.animation = `flyToA ${duration}s linear forwards`;
                         
                         setTimeout(() => {
-                            animate(); // Repeat
+                            // Cycle again
+                            startFlight(); 
                         }, duration * 1000);
                     }, duration * 1000);
                 }
                 
-                // Start with a small random delay so they don't all sync up
-                setTimeout(animate, Math.random() * 1000);
+                setTimeout(startFlight, Math.random() * 2000);
             });
         }
 

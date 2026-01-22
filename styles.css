@@ -37,16 +37,15 @@ body {
 }
 
 .plane { 
-            position: absolute; 
-            font-size: 24px; 
-            z-index: 20; 
-            margin-left: -12px; 
-            margin-top: -12px; 
-            pointer-events: none; 
-            text-shadow: 0 0 10px #CDDE00;
-            /* ANIMATE position (6s), but NOT transform (rotation) */
-            transition: left 6s linear, top 6s linear; 
-        }
+    position: absolute; 
+    font-size: 12px; /* Changed from 24px to 12px (50% smaller) */
+    z-index: 20; 
+    margin-left: -6px; /* Adjusted to half of the new font-size */
+    margin-top: -6px;  /* Adjusted to half of the new font-size */
+    pointer-events: none; 
+    text-shadow: 0 0 5px #CDDE00; /* Optional: reduced glow for smaller size */
+    left: 0; top: 0;
+}
 
 #coord-tracker { 
     position: fixed; 

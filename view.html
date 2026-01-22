@@ -173,8 +173,8 @@ routes.forEach(r => {
     // Small 100ms delay helps the browser register the starting point
     setTimeout(() => {
         move(); // Trigger first flight immediately
-        setInterval(move, 7000); // Repeat every 7 seconds
-    }, 100);
+        setInterval(move); // Repeat every 7 seconds
+    }, 10);
 });
             } catch (error) { console.error("Cloud Error:", error); }
         }

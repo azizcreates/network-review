@@ -53,11 +53,44 @@
             localStorage.setItem('airlineRoutes', JSON.stringify(routes));
         }
 
-        function addRoute() {
-            const r = {
-                a: document.getElementById('cityA').value, ax: parseInt(document.getElementById('ax').value), ay: parseInt(document.getElementById('ay').value),
-                b: document.getElementById('cityB').value, bx: parseInt(document.getElementById('bx').value), by: parseInt(document.getElementById('by').value),
-                id: Date.now() // Unique ID for animation
+const SHEET_URL = "YOUR_WEB_APP_URL_HERE"; 
+
+async function addRoute() {
+    const r = {
+        a: document.getElementById('cityA').value, 
+        ax: document.getElementById('ax').value, 
+        ay: document.getElementById('ay').value,
+        b: document.getElementById('cityB').value, 
+        bx: document.getElementById('bx').value, 
+        by: document.getElementById('by').value
+    };
+
+    if (!r.a || !r.ax || !r.bx) {
+        alert("Please fill in all city names and coordinates.");
+        return;
+    }
+
+    try {
+        await fetch(SHEET_URL, {
+            method: 'POST',
+            mode: 'no-cors', // This is important for Google Script deployments
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(r)
+        });
+
+        alert("Saved to Cloud successfully!");
+        
+        // Optional: Clear the inputs after saving
+        document.getElementById('cityA').value = '';
+        document.getElementById('cityB').value = '';
+        
+    } catch (error) {
+        console.error("Error saving to cloud:", error);
+        alert("Failed to save. Check your console for errors.");
+    }
+}
             };
             if(!r.a || isNaN(r.ax)) return alert("Please fill all fields");
             routes.push(r);

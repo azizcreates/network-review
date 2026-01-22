@@ -98,18 +98,23 @@
                 plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
                 container.appendChild(plane);
 
-                function animate() {
-                    plane.style.animation = `flyToB ${duration}s linear forwards`;
-                    setTimeout(() => {
-                        setTimeout(() => {
-                            plane.style.animation = `flyToA ${duration}s linear forwards`;
-                            setTimeout(() => { setTimeout(animate, 1000); }, duration * 1000);
-                        }, 1);
-                    }, duration * 1000);
-                }
-                setTimeout(animate, Math.random() * 1000);
-            });
-        }
+function animate() {
+    // 1. Fly from A to B
+    plane.style.animation = `flyToB ${duration}s linear forwards`;
+
+    // Wait exactly the flight duration, then immediately trigger the return
+    setTimeout(() => {
+        
+        // 2. Fly from B back to A
+        plane.style.animation = `flyToA ${duration}s linear forwards`;
+
+        // Wait exactly the return flight duration, then immediately restart the loop
+        setTimeout(() => {
+            animate(); 
+        }, duration * 1000);
+
+    }, duration * 1000);
+}
 
         function addLabel(txt, x, y) {
             const div = document.createElement('div');

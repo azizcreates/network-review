@@ -131,8 +131,22 @@
             toRemove.forEach(el => el.remove());
             pathSvg.innerHTML = '';
 
-            const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
-            
+async function drawNetwork() {
+    // Clear old elements
+    container.querySelectorAll('.city-label, .plane').forEach(el => el.remove());
+    pathSvg.innerHTML = '';
+
+    // Fetch from Google Sheets
+    const response = await fetch(SHEET_URL);
+    const routes = await response.json();
+    
+    routes.forEach(r => {
+        // ... the rest of your drawing logic remains the same ...
+    });
+}
+
+// Refresh from cloud every 30 seconds
+setInterval(drawNetwork, 30000);            
             routes.forEach(r => {
                 // Draw Path Line
                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");

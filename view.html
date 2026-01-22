@@ -5,35 +5,38 @@
     <style>
         body { margin: 0; background: #281536; color: white; font-family: 'Segoe UI', sans-serif; overflow: auto; }
         
-        header {
-            background: #522d6d;
-            padding: 15px 40px;
-            display: flex;
-            align-items: center;
-            border-bottom: 2px solid #CDDE00;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+        header { 
+            background: #522d6d; 
+            padding: 15px 40px; 
+            display: flex; 
+            align-items: center; 
+            border-bottom: 2px solid #CDDE00; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            z-index: 1000; 
         }
-
-        .logo { height: 50px; width: auto; margin-right: 20px; display: block; }
-
+        
+        .logo { height: 50px; width: auto; margin-right: 20px; }
         .branding h1 { margin: 0; font-size: 24px; color: #CDDE00; }
         .branding p { margin: 0; font-size: 13px; color: #ffffff; opacity: 0.8; }
 
         #map-container { 
             width: 3600px; 
             height: 2000px; 
-            background: url('map.svg') no-repeat;
-            background-size: contain;
-            position: relative;
-            margin: 60px 40px;
-            border: 1px solid #333;
+            background: url('map.svg') no-repeat; 
+            background-size: contain; 
+            position: relative; 
+            margin: 120px 40px 60px 40px; 
+            border: 1px solid #333; 
+            cursor: crosshair; 
         }
 
         #path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-        .route-line { fill: none; stroke: rgba(205, 222, 0, 0.2); stroke-width: 1px; stroke-dasharray: 4; }
-
+        .route-line { fill: none; stroke: rgba(246, 240, 252, 0.3); stroke-width: 1px; stroke-dasharray: 4; }
+        
         /* City Dot Styling */
         .city-dot {
             position: absolute;
@@ -43,19 +46,25 @@
             border-radius: 50%;
             z-index: 15;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 8px #CDDE00;
+            box-shadow: 0 0 10px #CDDE00;
         }
 
+        .ruler-x, .ruler-y { position: absolute; background: rgba(0, 255, 255, 0.1); pointer-events: none; z-index: 1; }
+        .ruler-x { width: 1px; height: 100%; }
+        .ruler-y { height: 1px; width: 100%; }
+        
+        #coord-tracker { position: fixed; background: rgba(255, 255, 0, 0.95); color: black; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 2000; display: none; }
+        
         .city-label { 
             position: absolute; 
             font-size: 11px; 
             font-weight: bold; 
-            background: rgba(0,0,0,0.8); 
-            padding: 2px 6px; 
+            background: rgba(0,0,0,0.7); 
+            padding: 2px 4px; 
             border-radius: 3px; 
             z-index: 10; 
             white-space: nowrap; 
-            transform: translateX(-50%); /* Center text under dot */
+            transform: translateX(-50%);
         }
         
         .plane { 
@@ -64,22 +73,21 @@
             z-index: 20; 
             margin-left: -12px; 
             margin-top: -12px; 
-            pointer-events: none;
+            pointer-events: none; 
             text-shadow: 0 0 10px #CDDE00;
         }
 
-        @keyframes flyToB {
-            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); }
-            100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); }
+        @keyframes flyToB { 
+            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); } 
+            100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); } 
         }
-        @keyframes flyToA {
-            0% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); }
-            100% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); }
+        @keyframes flyToA { 
+            0% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); } 
+            100% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); } 
         }
     </style>
 </head>
 <body>
-
     <header>
         <img src="logo.svg" alt="Logo" class="logo">
         <div class="branding">
@@ -88,46 +96,67 @@
         </div>
     </header>
 
-    <div id="map-container">
-        <svg id="path-svg"></svg>
-    </div>
+    <div id="coord-tracker">X: 0, Y: 0</div>
+    <div id="map-container"><svg id="path-svg"></svg></div>
 
     <script>
+        // 1. ADDED YOUR CLOUD URL BACK
         const SHEET_URL = "https://script.google.com/macros/s/AKfycbxO6arOMafeKrrDuRiEwc4p2bDkqI6L9e3yfSEuPDbZ2649YGmpf2YnY7ybJPMiTCM3/exec";
+        
         const container = document.getElementById('map-container');
         const pathSvg = document.getElementById('path-svg');
+        const tracker = document.getElementById('coord-tracker');
         const SPEED = 80;
 
+        function createRulers() {
+            for (let x = 0; x <= 3600; x += 200) {
+                const line = document.createElement('div');
+                line.className = 'ruler-x'; line.style.left = x + 'px';
+                container.appendChild(line);
+            }
+            for (let y = 0; y <= 2000; y += 200) {
+                const line = document.createElement('div');
+                line.className = 'ruler-y'; line.style.top = y + 'px';
+                container.appendChild(line);
+            }
+        }
+
+        container.addEventListener('mousemove', (e) => {
+            const rect = container.getBoundingClientRect();
+            tracker.style.display = 'block';
+            tracker.style.left = (e.clientX + 15) + 'px';
+            tracker.style.top = (e.clientY + 15) + 'px';
+            tracker.innerText = `X: ${Math.round(e.clientX - rect.left)}, Y: ${Math.round(e.clientY - rect.top)}`;
+        });
+
+        // 2. UPDATED TO FETCH FROM CLOUD
         async function drawNetwork() {
             try {
                 const response = await fetch(SHEET_URL);
                 const routes = await response.json();
                 
-                // Clear old elements (labels, planes, and dots)
+                // Clear old elements including dots
                 container.querySelectorAll('.city-label, .plane, .city-dot').forEach(el => el.remove());
                 pathSvg.innerHTML = '';
 
                 routes.forEach(r => {
-                    // Draw Line
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                     line.setAttribute("class", "route-line");
                     line.setAttribute("x1", r.ax); line.setAttribute("y1", r.ay);
                     line.setAttribute("x2", r.bx); line.setAttribute("y2", r.by);
                     pathSvg.appendChild(line);
 
-                    // Add Cities (Dot + Label)
+                    // 3. ADDED DOTS LOGIC
                     addCity(r.a, r.ax, r.ay);
                     addCity(r.b, r.bx, r.by);
 
-                    // Animation Logic
-                    const dx = r.bx - r.ax;
-                    const dy = r.by - r.ay;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    const duration = dist / SPEED;
+                    const dx = r.bx - r.ax, dy = r.by - r.ay;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    const duration = distance / SPEED;
                     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
                     const plane = document.createElement('div');
-                    plane.className = 'plane';
+                    plane.className = 'plane'; 
                     plane.innerHTML = '✈️';
                     plane.style.setProperty('--x1', r.ax + 'px');
                     plane.style.setProperty('--y1', r.ay + 'px');
@@ -137,26 +166,25 @@
                     plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
                     container.appendChild(plane);
 
-                    function animate() {
+                    function startFlight() {
                         plane.style.animation = `flyToB ${duration}s linear forwards`;
                         setTimeout(() => {
                             setTimeout(() => {
                                 plane.style.animation = `flyToA ${duration}s linear forwards`;
-                                setTimeout(() => { setTimeout(animate, 1000); }, duration * 1000);
-                            }, 1000);
+                                setTimeout(() => { startFlight(); }, duration * 1000);
+                            }, 1000); // 1s pause at B
                         }, duration * 1000);
                     }
-                    setTimeout(animate, Math.random() * 2000);
+                    setTimeout(startFlight, Math.random() * 2000);
                 });
-            } catch (error) { console.error("Fetch Error:", error); }
+            } catch (error) { console.error("Cloud Error:", error); }
         }
 
+        // 4. FUNCTION TO DRAW DOT AND LABEL
         function addCity(name, x, y) {
-            // Avoid adding duplicate dots for the same city coordinate
             const id = `dot-${x}-${y}`;
-            if (document.getElementById(id)) return;
+            if (document.getElementById(id)) return; // Prevent double dots
 
-            // Create Dot
             const dot = document.createElement('div');
             dot.className = 'city-dot';
             dot.id = id;
@@ -164,17 +192,19 @@
             dot.style.top = y + 'px';
             container.appendChild(dot);
 
-            // Create Label
-            const lbl = document.createElement('div');
-            lbl.className = 'city-label';
-            lbl.style.left = x + 'px';
-            lbl.style.top = (y + 12) + 'px'; // Positioned just below the dot
-            lbl.innerText = name;
-            container.appendChild(lbl);
+            const div = document.createElement('div');
+            div.className = 'city-label'; 
+            div.style.left = x + 'px'; 
+            div.style.top = (y + 12) + 'px';
+            div.innerText = txt = name; 
+            container.appendChild(div);
         }
 
+        createRulers();
         drawNetwork();
-        setInterval(drawNetwork, 60000);
+        
+        // Refresh every minute to stay synced with Google Sheets
+        setInterval(drawNetwork, 60000); 
     </script>
 </body>
 </html>

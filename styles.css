@@ -36,15 +36,18 @@ body {
   height: 100%;
 }
 
-.plane { 
-    position: absolute; 
-    font-size: 12px; /* Changed from 24px to 12px (50% smaller) */
-    z-index: 20; 
-    margin-left: -6px; /* Adjusted to half of the new font-size */
-    margin-top: -6px;  /* Adjusted to half of the new font-size */
-    pointer-events: none; 
-    text-shadow: 0 0 5px #CDDE00; /* Optional: reduced glow for smaller size */
-    left: 0; top: 0;
+#plane {
+  position: absolute;
+  font-size: 18px; /* 50% smaller than 24px */
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -6px; /* Centering offset */
+  margin-top: -6px;
+  z-index: 100;
+  pointer-events: none;
 }
 
 #coord-tracker { 

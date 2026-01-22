@@ -14,6 +14,8 @@
         .logo { height: 50px; width: auto; margin-right: 20px; }
         .branding h1 { margin: 0; font-size: 24px; color: #CDDE00; }
         .branding p { margin: 0; font-size: 13px; color: #ffffff; opacity: 0.8; }
+        
+        <div id="coord-tracker">X: 0, Y: 0</div>
 
         #map-container { 
             width: 3600px; height: 2000px; background: url('map.svg') no-repeat; 
@@ -67,6 +69,20 @@
     <div id="map-container"><svg id="path-svg"></svg></div>
 
     <script>
+        const tracker = document.getElementById('coord-tracker');
+
+container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
+    tracker.style.display = 'block';
+    tracker.style.left = (e.clientX + 15) + 'px';
+    tracker.style.top = (e.clientY + 15) + 'px';
+    tracker.innerText = `X: ${Math.round(e.clientX - rect.left)}, Y: ${Math.round(e.clientY - rect.top)}`;
+});
+
+container.addEventListener('mouseleave', () => {
+    tracker.style.display = 'none';
+});
+        
         const SHEET_URL = "https://script.google.com/macros/s/AKfycbxCNjNehg9DqxbLY8kFtRaTVftJYot8Lk_QcxyofrwcmvU_BuuRnEZLVlHeQxGeD9Ns/exec";
         const container = document.getElementById('map-container');
         const pathSvg = document.getElementById('path-svg');

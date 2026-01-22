@@ -15,18 +15,10 @@
         .branding h1 { margin: 0; font-size: 24px; color: #CDDE00; }
         .branding p { margin: 0; font-size: 13px; color: #ffffff; opacity: 0.8; }
         
-        /* Fixed CSS for the tracker */
         #coord-tracker { 
-            position: fixed; 
-            background: rgba(255, 255, 0, 0.95); 
-            color: black; 
-            padding: 5px 12px; 
-            border-radius: 4px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            pointer-events: none; 
-            z-index: 2000; 
-            display: none; 
+            position: fixed; background: rgba(255, 255, 0, 0.95); color: black; 
+            padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; 
+            pointer-events: none; z-index: 2000; display: none; 
         }
 
         #map-container { 
@@ -51,19 +43,20 @@
         }
         
         .plane { 
-            position: absolute; font-size: 24px; z-index: 20; 
-            margin-left: -12px; margin-top: -12px; pointer-events: none; 
-            left: 0; top: 0;
+            position: absolute; font-size: 12px; z-index: 20; 
+            width: 12px; height: 12px; display: flex; align-items: center; justify-content: center;
+            margin-left: -6px; margin-top: -6px; pointer-events: none; 
+            left: 0; top: 0; text-shadow: 0 0 5px #CDDE00;
         }
 
         @keyframes flyToB { 
-            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); } /*    */
-            100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); } /*    */
+            0% { transform: translate(var(--x1), var(--y1)) rotate(var(--angle)); } 
+            100% { transform: translate(var(--x2), var(--y2)) rotate(var(--angle)); } 
         }
         @keyframes flyToA { 
             0% { transform: translate(var(--x2), var(--y2)) rotate(var(--rev-angle)); } 
             100% { transform: translate(var(--x1), var(--y1)) rotate(var(--rev-angle)); } 
-        }\  
+        }
     </style>
 </head>
 <body>
@@ -76,7 +69,6 @@
     </header>
 
     <div id="coord-tracker">X: 0, Y: 0</div>
-
     <div id="map-container"><svg id="path-svg"></svg></div>
 
     <script>
@@ -91,9 +83,7 @@
             tracker.innerText = `X: ${Math.round(e.clientX - rect.left)}, Y: ${Math.round(e.clientY - rect.top)}`;
         });
 
-        container.addEventListener('mouseleave', () => {
-            tracker.style.display = 'none';
-        });
+        container.addEventListener('mouseleave', () => { tracker.style.display = 'none'; });
         
         const SHEET_URL = "https://script.google.com/macros/s/AKfycbxCNjNehg9DqxbLY8kFtRaTVftJYot8Lk_QcxyofrwcmvU_BuuRnEZLVlHeQxGeD9Ns/exec";
         const pathSvg = document.getElementById('path-svg');
@@ -130,8 +120,10 @@
                     plane.style.setProperty('--y1', r.ay + 'px');
                     plane.style.setProperty('--x2', r.bx + 'px');
                     plane.style.setProperty('--y2', r.by + 'px');
-                    plane.style.setProperty('--angle', (angle + 45) + 'deg');
-                    plane.style.setProperty('--rev-angle', (angle + 180 + 45) + 'deg');
+                    
+                    // Fixed Angle: Using +90 for the text icon '✈'
+                    plane.style.setProperty('--angle', (angle + 90) + 'deg');
+                    plane.style.setProperty('--rev-angle', (angle + 180 + 90) + 'deg');
                     
                     container.appendChild(plane);
 
@@ -142,8 +134,8 @@
                                 plane.style.animation = `flyToA ${duration}s linear forwards`;
                                 setTimeout(() => {
                                     setTimeout(startFlight, 1000);
-                                }, duration * 2000);
-                            }, );
+                                }, duration * 1000);
+                            }, 1000); // 1s pause at B
                         }, duration * 1000);
                     }
                     setTimeout(startFlight, Math.random() * 3000);
@@ -155,17 +147,12 @@
             const id = `dot-${x}-${y}`;
             if (document.getElementById(id)) return;
             const dot = document.createElement('div');
-            dot.className = 'city-dot';
-            dot.id = id;
-            dot.style.left = x + 'px';
-            dot.style.top = y + 'px';
+            dot.className = 'city-dot'; dot.id = id;
+            dot.style.left = x + 'px'; dot.style.top = y + 'px';
             container.appendChild(dot);
             const lbl = document.createElement('div');
-            lbl.className = 'city-label'; 
-            lbl.style.left = x + 'px'; 
-            lbl.style.top = (y + 12) + 'px';
-            lbl.innerText = name; 
-            container.appendChild(lbl);
+            lbl.className = 'city-label'; lbl.style.left = x + 'px'; lbl.style.top = (y + 12) + 'px';
+            lbl.innerText = name; container.appendChild(lbl);
         }
 
         drawNetwork();

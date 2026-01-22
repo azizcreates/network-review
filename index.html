@@ -13,7 +13,9 @@
         .btn-add { background: #28a745; color: white; width: 100%; }
         .btn-del { background: #dc3545; color: white; font-size: 11px; padding: 5px 8px; }
         .btn-add:hover { background: #218838; }
+        .btn-add:disabled { background: #ccc; cursor: not-allowed; }
         hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+        #status-msg { font-size: 12px; color: #666; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
@@ -32,22 +34,62 @@
             <input type="number" id="bx" placeholder="X Coord"> 
             <input type="number" id="by" placeholder="Y Coord">
         </div>
-        <button class="btn-add" onclick="addRoute()">Add Route</button>
+        <button id="addBtn" class="btn-add" onclick="addRoute()">Add Route</button>
+        <div id="status-msg">Ready</div>
     </div>
 
     <div class="panel" style="flex-grow: 1;">
-        <h2>Active Routes</h2>
-        <div id="routeList"></div>
+        <h2>Active Routes (Cloud)</h2>
+        <div id="routeList">Loading cloud data...</div>
         <br>
         <a href="view.html" target="_blank" style="color: #0052cc; font-weight: bold; text-decoration: none;">View Live Map →</a>
     </div>
 
     <script>
-        let routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+        // YOUR UNIQUE GOOGLE LINK
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbxO6arOMafeKrrDuRiEwc4p2bDkqI6L9e3yfSEuPDbZ2649YGmpf2YnY7ybJPMiTCM3/exec";
+        
+        let routes = [];
+
+        // 1. Load data from Cloud on startup
+        async function fetchFromCloud() {
+            try {
+                const response = await fetch(SHEET_URL);
+                routes = await response.json();
+                renderRoutes();
+            } catch (e) {
+                document.getElementById('routeList').innerText = "Error loading data.";
+            }
+        }
+
+        // 2. Save data to Cloud
+        async function saveToCloud() {
+            const btn = document.getElementById('addBtn');
+            const status = document.getElementById('status-msg');
+            
+            btn.disabled = true;
+            status.innerText = "Saving to Cloud...";
+
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Essential for Google Apps Script
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(routes)
+                });
+                status.innerText = "Saved Successfully!";
+                setTimeout(() => { status.innerText = "Ready"; }, 2000);
+            } catch (e) {
+                alert("Failed to save to cloud.");
+                status.innerText = "Error";
+            } finally {
+                btn.disabled = false;
+            }
+        }
 
         function renderRoutes() {
             const list = document.getElementById('routeList');
-            list.innerHTML = routes.length === 0 ? '<p style="color:gray">No routes added yet.</p>' : '';
+            list.innerHTML = routes.length === 0 ? '<p style="color:gray">No routes found.</p>' : '';
             routes.forEach((r, index) => {
                 list.innerHTML += `
                     <div class="route-item">
@@ -55,10 +97,9 @@
                         <button class="btn-del" onclick="deleteRoute(${index})">Delete</button>
                     </div>`;
             });
-            localStorage.setItem('airlineRoutes', JSON.stringify(routes));
         }
 
-        function addRoute() {
+        async function addRoute() {
             const r = {
                 a: document.getElementById('cityA').value,
                 ax: parseInt(document.getElementById('ax').value),
@@ -69,28 +110,28 @@
             };
 
             if (!r.a || isNaN(r.ax) || !r.b || isNaN(r.bx)) {
-                alert("Please fill in all fields with valid names and numbers.");
+                alert("Please fill in all fields.");
                 return;
             }
 
             routes.push(r);
             renderRoutes();
-            
+            await saveToCloud(); // Send to Google Sheet
+
             // Clear inputs
-            document.getElementById('cityA').value = '';
-            document.getElementById('ax').value = '';
-            document.getElementById('ay').value = '';
-            document.getElementById('cityB').value = '';
-            document.getElementById('bx').value = '';
-            document.getElementById('by').value = '';
+            document.querySelectorAll('input').forEach(i => i.value = '');
         }
 
-        function deleteRoute(index) {
-            routes.splice(index, 1);
-            renderRoutes();
+        async function deleteRoute(index) {
+            if(confirm("Delete this route from the cloud?")) {
+                routes.splice(index, 1);
+                renderRoutes();
+                await saveToCloud(); // Update Google Sheet
+            }
         }
 
-        renderRoutes();
+        // Initialize
+        fetchFromCloud();
     </script>
 </body>
 </html>

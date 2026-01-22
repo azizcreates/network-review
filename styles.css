@@ -36,8 +36,14 @@ body {
   height: 100%;
 }
 
-#plane {
-  position: absolute;
-  width: 24px;
-  transition: transform 0.5s linear;
-}
+.plane { 
+            position: absolute; 
+            font-size: 24px; 
+            z-index: 20; 
+            margin-left: -12px; 
+            margin-top: -12px; 
+            pointer-events: none; 
+            text-shadow: 0 0 10px #CDDE00;
+            /* ANIMATE position (6s), but NOT transform (rotation) */
+            transition: left 6s linear, top 6s linear; 
+        }

@@ -98,18 +98,21 @@
                 plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
                 container.appendChild(plane);
 
+                plane.style.setProperty('--angle', (angle + 45) + 'deg'); 
+                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
 function animate() {
-    // 1. Fly from A to B
+    // 1. FLY TO B: Facing the forward angle
     plane.style.animation = `flyToB ${duration}s linear forwards`;
 
-    // Wait exactly the flight duration, then immediately trigger the return
+    // Wait for the exact moment it arrives at B
     setTimeout(() => {
         
-        // 2. Fly from B back to A
+        // 2. FLY TO A: Facing the reverse angle
         plane.style.animation = `flyToA ${duration}s linear forwards`;
 
-        // Wait exactly the return flight duration, then immediately restart the loop
+        // Wait for the exact moment it arrives back at A
         setTimeout(() => {
+            // Restart the cycle immediately
             animate(); 
         }, duration * 1000);
 

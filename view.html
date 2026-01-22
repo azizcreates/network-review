@@ -11,12 +11,17 @@
 
         #map-container { width: 3600px; height: 2000px; background: url('map.svg') no-repeat; background-size: contain; position: relative; margin: 60px 40px; border: 1px solid #333; cursor: crosshair; }
         #path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+        
+        /* Line Thickness adjusted here */
         .route-line { fill: none; stroke: rgb(246, 240, 252); stroke-width: 2px; stroke-dasharray: 4; }
+        
         .ruler-x, .ruler-y { position: absolute; background: rgba(0, 255, 255, 0.1); pointer-events: none; z-index: 1; }
         .ruler-x { width: 1px; height: 100%; }
         .ruler-y { height: 1px; width: 100%; }
         #coord-tracker { position: fixed; background: rgba(255, 255, 0, 0.95); color: black; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 2000; display: none; }
         .city-label { position: absolute; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 4px; border-radius: 3px; z-index: 10; white-space: nowrap; }
+        
+        /* Plane styling - No glow */
         .plane { position: absolute; font-size: 24px; z-index: 20; margin-left: -12px; margin-top: -12px; pointer-events: none; }
 
         @keyframes flyToB { 
@@ -98,26 +103,20 @@
                 plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
                 container.appendChild(plane);
 
-                plane.style.setProperty('--angle', (angle + 45) + 'deg'); 
-                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
-function animate() {
-    // 1. FLY TO B: Facing the forward angle
-    plane.style.animation = `flyToB ${duration}s linear forwards`;
-
-    // Wait for the exact moment it arrives at B
-    setTimeout(() => {
-        
-        // 2. FLY TO A: Facing the reverse angle
-        plane.style.animation = `flyToA ${duration}s linear forwards`;
-
-        // Wait for the exact moment it arrives back at A
-        setTimeout(() => {
-            // Restart the cycle immediately
-            animate(); 
-        }, duration * 1000);
-
-    }, duration * 1000);
-}
+                function animate() {
+                    plane.style.animation = `flyToB ${duration}s linear forwards`;
+                    setTimeout(() => {
+                        plane.style.animation = `flyToA ${duration}s linear forwards`;
+                        setTimeout(() => {
+                            animate(); 
+                        }, duration * 1000);
+                    }, duration * 1000);
+                }
+                
+                // Start the loop
+                setTimeout(animate, Math.random() * 1000);
+            });
+        }
 
         function addLabel(txt, x, y) {
             const div = document.createElement('div');

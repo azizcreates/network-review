@@ -51,7 +51,7 @@
         }
         
         .plane { 
-            position: absolute; font-size: 12px; z-index: 20; 
+            position: absolute; font-size: 24px; z-index: 20; 
             margin-left: -12px; margin-top: -12px; pointer-events: none; 
             left: 0; top: 0;
         }
@@ -125,7 +125,7 @@
 
                     const plane = document.createElement('div');
                     plane.className = 'plane'; 
-                    plane.innerHTML = '✈️';
+                    plane.innerHTML = '✈';
                     plane.style.setProperty('--x1', r.ax + 'px');
                     plane.style.setProperty('--y1', r.ay + 'px');
                     plane.style.setProperty('--x2', r.bx + 'px');
@@ -142,8 +142,8 @@
                                 plane.style.animation = `flyToA ${duration}s linear forwards`;
                                 setTimeout(() => {
                                     setTimeout(startFlight, 1000);
-                                }, duration * 1);
-                            }, 1000);
+                                }, duration * 2000);
+                            }, );
                         }, duration * 1000);
                     }
                     setTimeout(startFlight, Math.random() * 3000);

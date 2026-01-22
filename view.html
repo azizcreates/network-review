@@ -102,12 +102,15 @@
             tracker.innerText = `X: ${Math.round(e.clientX - rect.left)}, Y: ${Math.round(e.clientY - rect.top)}`;
         });
 
-        function drawNetwork() {
-            const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
-            container.querySelectorAll('.city-label, .plane').forEach(el => el.remove());
+       function drawNetwork() {
+            const toRemove = container.querySelectorAll('.city-label, .plane');
+            toRemove.forEach(el => el.remove());
             pathSvg.innerHTML = '';
 
+            const routes = JSON.parse(localStorage.getItem('airlineRoutes')) || [];
+            
             routes.forEach(r => {
+                // Draw Path Line
                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                 line.setAttribute("class", "route-line");
                 line.setAttribute("x1", r.ax); line.setAttribute("y1", r.ay);
@@ -117,44 +120,34 @@
                 addLabel(r.a, r.ax, r.ay);
                 addLabel(r.b, r.bx, r.by);
 
-                const dx = r.bx - r.ax, dy = r.by - r.ay;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                const duration = distance / SPEED;
-                
-                // Logic from your old code
+                // Flight Calculation
+                const dx = r.bx - r.ax;
+                const dy = r.by - r.ay;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const duration = dist / SPEED;
                 const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-                const revAngle = angle + 180;
 
                 const plane = document.createElement('div');
-                plane.className = 'plane'; 
+                plane.className = 'plane';
                 plane.innerHTML = '✈️';
-                
                 plane.style.setProperty('--x1', r.ax + 'px');
                 plane.style.setProperty('--y1', r.ay + 'px');
                 plane.style.setProperty('--x2', r.bx + 'px');
                 plane.style.setProperty('--y2', r.by + 'px');
-                
-                // Applying the specific rotation formula (+45 offset)
                 plane.style.setProperty('--angle', (angle + 45) + 'deg');
-                plane.style.setProperty('--rev-angle', (revAngle + 45) + 'deg');
+                plane.style.setProperty('--rev-angle', (angle + 225) + 'deg');
                 container.appendChild(plane);
 
-                function startFlight() {
-                    // Fly to B
+                function animate() {
                     plane.style.animation = `flyToB ${duration}s linear forwards`;
-                    
                     setTimeout(() => {
-                        // Fly to A (No pause)
-                        plane.style.animation = `flyToA ${duration}s linear forwards`;
-                        
                         setTimeout(() => {
-                            // Cycle again
-                            startFlight(); 
-                        }, duration * 1000);
+                            plane.style.animation = `flyToA ${duration}s linear forwards`;
+                            setTimeout(() => { setTimeout(animate, 2000); }, duration * 1000);
+                        }, 1); // Wait at B
                     }, duration * 1000);
                 }
-                
-                setTimeout(startFlight, Math.random() * 2000);
+                setTimeout(animate, Math.random() * 3000);
             });
         }
 
